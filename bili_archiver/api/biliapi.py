@@ -141,7 +141,11 @@ class BiliAPI:
         resp = self.session.get('https://api.bilibili.com/x/player/playurl',
                                 params={
                                     'avid': aid,
-                                    'cid': cid
+                                    'cid': cid,
+                                    'otype': '',
+                                    'fourk': 1,
+                                    'fnver': 0,
+                                    'fnval': 2000
                                 })
         body = resp.json()
         return body['data']
