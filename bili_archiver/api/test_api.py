@@ -1,16 +1,16 @@
 from unittest import TestCase
-from bili_archiver.api.biliapi import BiliAPI, BiliBiliApiException
+from bili_archiver.api.biliapi import BiliAPI, BiliApiException
 import os
 from datetime import datetime
 
 
 class TestAPI(TestCase):
     def setUp(self) -> None:
-        self.ins = BiliAPI(os.environ.get('SESSDATA'))
+        self.ins = BiliAPI.from_env()
 
     def test_ins(self):
-        with self.assertRaises(BiliBiliApiException):
-            BiliAPI('123')
+        with self.assertRaises(BiliApiException):
+            BiliAPI('123', '123')
 
     def test_get_history(self):
         print(
@@ -51,7 +51,7 @@ class TestAPI(TestCase):
         print(self.ins.get_video_pages(934637444))
 
     def test_get_video_page_download_url(self):
-        print(self.ins.get_video_page_download_url(934637444, 455439756))
+        print(self.ins.get_video_page_download_url(210904288, 493070282))
 
 
 def today():

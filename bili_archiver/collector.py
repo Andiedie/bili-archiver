@@ -2,51 +2,73 @@ from typing import List
 from bili_archiver import recorder
 from bili_archiver.api import BiliAPI
 from bili_archiver.logger import logger
+from datetime import datetime
 
 
 def collect(
         from_history: bool = False,
         from_self_favorite_folders: bool = False,
         from_user_ids: List[int] = None,
-        api: BiliAPI = BiliAPI.from_env()
+        api: BiliAPI = None
 ):
-    videos = set()
+    if api is None:
+        logger.info('init api from ENV')
+        api = BiliAPI.from_env()
 
     if from_history:
         logger.info('collecting videos from history')
-        last_view = recorder.get_last_run_time('self_history')
-        vs = api.get_history(after=last_view)
-        watched = [v for v in vs if v['progress'] > 10 or v['progress'] / v['duration'] > 0.5]
-        temp = [v['kid'] for v in watched if not recorder.is_downloaded(v['kid'])]
-        logger.info(f'{len(vs)} in history, {len(watched)} watched > 5s, {len(temp)} not downloaded in history')
-        videos.update(temp)
+
+        last_time = recorder.get_last_collect_time('history')
+        vs = api.get_history(after=last_time)
+
+        # 排除番剧
+        vs = [v for v in vs if v['history']['bvid'] != '']
+
+        cnt = 0
+        for v in vs:
+            vid = v['kid']
+            is_collected = recorder.is_collected(vid)
+            if not is_collected:
+                cnt += 1
+                recorder.download_history_set(vid)
+
+        logger.info(f'{len(vs)} in history since {last_time}, {cnt} collected')
+        recorder.set_last_collect_time('history', datetime.now())
 
     if from_self_favorite_folders:
         logger.info('collecting videos from favorite folders')
         folders = api.get_self_favorite_folders()
         for folder in folders:
             logger.info(f"collecting videos from favorite folder {folder['title']}")
-            last_view = recorder.get_last_run_time(f"fld{folder['id']}")
-            vs = api.get_videos_of_favorite_folder(
-                fav_id=folder['id'],
-                after=last_view
-            )
-            temp = [v['id'] for v in vs if not recorder.is_downloaded(v['id'])]
-            logger.info(f"{len(vs)} in folder, {len(temp)} not downloaded in f{folder['title']}")
-            videos.update(temp)
+
+            last_time = recorder.get_last_collect_time(f"fld{folder['id']}")
+            vs = api.get_videos_of_favorite_folder(folder['id'], last_time)
+
+            cnt = 0
+            for v in vs:
+                vid = v['id']
+                is_collected = recorder.is_collected(vid)
+                if not is_collected:
+                    cnt += 1
+                    recorder.download_history_set(vid)
+
+            logger.info(f"{len(vs)} in folder {folder['title']} since {last_time}, {cnt} collected")
+            recorder.set_last_collect_time(f"fld{folder['id']}")
 
     if from_user_ids is not None:
         for user in from_user_ids:
             logger.info('collecting videos from history')
-            last_view = recorder.get_last_run_time(f"usr{user}")
-            vs = api.get_videos_of_user(
-                user_id=user,
-                after=last_view
-            )
-            temp = [v['id'] for v in vs if not recorder.is_downloaded(v['id'])]
-            logger.info(f"{len(vs)} collected, {len(temp)} not downloaded in user f{user}")
-            videos.update(temp)
 
-    logger.info(f"{len(videos)} collected")
+            last_time = recorder.get_last_collect_time(f"usr{user}")
+            vs = api.get_videos_of_user(user, last_time)
 
-    return videos
+            cnt = 0
+            for v in vs:
+                vid = v['id']
+                is_collected = recorder.is_collected(vid)
+                if not is_collected:
+                    cnt += 1
+                    recorder.download_history_set(vid)
+
+            logger.info(f"{len(vs)} in user {user} since {last_time}, {cnt} collected")
+            recorder.set_last_collect_time(f"usr{user}")

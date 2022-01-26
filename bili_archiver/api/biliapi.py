@@ -3,26 +3,31 @@ from datetime import datetime
 import os
 
 
-class BiliBiliApiException(Exception):
+class BiliApiException(Exception):
+    def __init__(self, msg: str, code: int):
+        self.code = code
+        super().__init__(msg)
+
     @staticmethod
-    def check(con, msg):
+    def check(con: bool, msg: str, code: int = 0):
         if con:
-            raise BiliBiliApiException(msg)
+            raise BiliApiException(msg, code)
 
 
 class BiliAPI:
     @staticmethod
     def from_env():
-        BiliBiliApiException.check('SESSDATA' not in os.environ, 'environment variable SESSDATA needed')
-        return BiliAPI(os.environ.get('SESSDATA'))
+        BiliApiException.check('SESSDATA' not in os.environ, 'environment variable SESSDATA needed')
+        return BiliAPI(os.environ.get('SESSDATA'), os.environ.get('BILIJCT'))
 
-    def __init__(self, sessdata: str):
+    def __init__(self, sessdata: str, bili_jct: str,):
         self.session = requests.Session()
-        self.session.cookies.set('SESSDATA', sessdata, domain='api.bilibili.com')
+        self.session.cookies.set('SESSDATA', sessdata)
+        self.session.cookies.set('bili_jct', bili_jct)
 
         # 验证登录
         user_info = self.get_user_info()
-        BiliBiliApiException.check(not user_info['isLogin'], 'not login')
+        BiliApiException.check(not user_info['isLogin'], 'not login')
 
         # 记录当前用户 ID
         self.mid = user_info['mid']
@@ -45,6 +50,7 @@ class BiliAPI:
             resp = self.session.get('https://api.bilibili.com/x/web-interface/history/cursor',
                                     params=cursor)
             body = resp.json()
+            BiliApiException.check(body['code'] != 0, body['message'], body['code'])
             cursor = body['data']['cursor']
             # 翻到底了
             if len(body['data']['list']) == 0:
@@ -60,7 +66,7 @@ class BiliAPI:
         resp = self.session.get('https://api.bilibili.com/x/v3/fav/folder/created/list-all',
                                 params={'up_mid': user_id})
         body = resp.json()
-
+        BiliApiException.check(body['code'] != 0, body['message'], body['code'])
         if body.get('data') and body['data'].get('list'):
             return body['data']['list']
 
@@ -83,7 +89,7 @@ class BiliAPI:
                                         'ps': 20
                                     })
             body = resp.json()
-
+            BiliApiException.check(body['code'] != 0, body['message'], body['code'])
             # 没视频了，直接退出
             if body['data']['medias'] is None or len(body['data']['medias']) == 0:
                 break
@@ -108,7 +114,7 @@ class BiliAPI:
                                         'ps': 50
                                     })
             body = resp.json()
-
+            BiliApiException.check(body['code'] != 0, body['message'], body['code'])
             # 没视频了，直接退出
             if len(body['data']['list']['vlist']) == 0:
                 break
@@ -118,7 +124,7 @@ class BiliAPI:
         return result
 
     def get_video_info(self, aid: int = None, bvid: str = None):
-        BiliBiliApiException.check(aid is None and bvid is None, 'aid or bvid needed')
+        BiliApiException.check(aid is None and bvid is None, 'aid or bvid needed')
 
         if aid is not None:
             payload = {'aid': aid}
@@ -127,7 +133,8 @@ class BiliAPI:
 
         resp = self.session.get('https://api.bilibili.com/x/web-interface/view', params=payload)
         body = resp.json()
-        return body['data']
+        BiliApiException.check(body['code'] != 0, body['message'], body['code'])
+        return body.get('data')
 
     def get_video_pages(self, aid):
         resp = self.session.get('https://api.bilibili.com/x/player/pagelist',
@@ -135,6 +142,7 @@ class BiliAPI:
                                     'aid': aid
                                 })
         body = resp.json()
+        BiliApiException.check(body['code'] != 0, body['message'], body['code'])
         return body['data']
 
     def get_video_page_download_url(self, aid: int, cid: int):
@@ -148,4 +156,6 @@ class BiliAPI:
                                     'fnval': 2000
                                 })
         body = resp.json()
+
+        BiliApiException.check(body['code'] != 0, body['message'], body['code'])
         return body['data']
