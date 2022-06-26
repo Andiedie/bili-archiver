@@ -18,9 +18,9 @@ class MergeException(Exception):
     pass
 
 
-def download(videos: Generator[Video, None, None]):
+def download(videos: Generator[Video, None, None], output: Path):
     for video in videos:
-        parent = Path(os.getcwd()).joinpath(f"{slug(video.up_name)}/{video.aid}_{slug(video.title)}")
+        parent = output.joinpath(f"{slug(video.up_name)}/{video.aid}_{slug(video.title)}")
         referer = f'https://www.bilibili.com/video/{video.bvid}'
         for page in video.pages:
             video_path = parent.joinpath(f'{page.pid}_{slug(page.title)}.bili_archiver.mp4')

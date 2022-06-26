@@ -1,6 +1,8 @@
 import requests
 from datetime import datetime
 import os
+from pathlib import Path
+import http.cookiejar
 
 
 class BiliApiException(Exception):
@@ -15,16 +17,25 @@ class BiliApiException(Exception):
 
 
 class BiliAPI:
+    # @staticmethod
+    # def from_env():
+    #     BiliApiException.check('SESSDATA' not in os.environ, 'environment variable SESSDATA needed')
+    #     BiliApiException.check('BILIJCT' not in os.environ, 'environment variable BILIJCT needed')
+    #     session = requests.Session()
+    #     session.cookies.set('SESSDATA', os.environ.get('SESSDATA'))
+    #     session.cookies.set('bili_jct', os.environ.get('BILIJCT'))
+    #     return BiliAPI(session)
+
     @staticmethod
-    def from_env():
-        BiliApiException.check('SESSDATA' not in os.environ, 'environment variable SESSDATA needed')
-        return BiliAPI(os.environ.get('SESSDATA'), os.environ.get('BILIJCT'))
+    def from_file(path: Path):
+        cj = http.cookiejar.MozillaCookieJar(path)
+        cj.load()
+        session = requests.Session()
+        session.cookies = cj
+        return BiliAPI(session)
 
-    def __init__(self, sessdata: str, bili_jct: str,):
-        self.session = requests.Session()
-        self.session.cookies.set('SESSDATA', sessdata)
-        self.session.cookies.set('bili_jct', bili_jct)
-
+    def __init__(self, session: requests.Session):
+        self.session = session
         # 验证登录
         user_info = self.get_user_info()
         BiliApiException.check(not user_info['isLogin'], 'not login')

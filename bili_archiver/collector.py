@@ -6,15 +6,11 @@ from datetime import datetime
 
 
 def collect(
+        api: BiliAPI,
         from_history: bool = False,
         from_self_favorite_folders: bool = False,
         from_user_ids: List[int] = None,
-        api: BiliAPI = None
 ):
-    if api is None:
-        logger.info('init api from ENV')
-        api = BiliAPI.from_env()
-
     if from_history:
         logger.info('collecting videos from history')
 
