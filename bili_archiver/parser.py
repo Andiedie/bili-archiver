@@ -29,11 +29,7 @@ class Video:
     pages: List[Page]
 
 
-def parse(api: BiliAPI = None) -> Generator[Video, None, None]:
-    if api is None:
-        logger.info('init api from ENV')
-        api = BiliAPI.from_env()
-
+def parse(api: BiliAPI) -> Generator[Video, None, None]:
     records = recorder.get_to_download()
 
     for record in records:
