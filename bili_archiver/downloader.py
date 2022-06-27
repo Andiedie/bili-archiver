@@ -29,13 +29,13 @@ class MergeException(Exception):
 
 def download(videos: Generator[Video, None, None], output: Path):
     for video in videos:
-        parent = output.joinpath(f"{video.up_id}_{slugify(video.up_name)}/{video.aid}_{slugify(video.title)}")
-        parent.mkdir(exist_ok=True, parents=True)
-        temp_parent = tempdir.joinpath(f"{video.up_id}_{slugify(video.up_name)}_{video.aid}_{slugify(video.title)}")
-        temp_parent.mkdir(exist_ok=True, parents=True)
-        referer = f'https://www.bilibili.com/video/{video.bvid}'
-        for page in video.pages:
-            try:
+        try:
+            parent = output.joinpath(f"{video.up_id}_{slugify(video.up_name)}/{video.aid}_{slugify(video.title)}")
+            parent.mkdir(exist_ok=True, parents=True)
+            temp_parent = tempdir.joinpath(f"{video.up_id}_{slugify(video.up_name)}_{video.aid}_{slugify(video.title)}")
+            temp_parent.mkdir(exist_ok=True, parents=True)
+            referer = f'https://www.bilibili.com/video/{video.bvid}'
+            for page in video.pages:
                 out_path = parent.joinpath(f'{page.pid}_{slugify(page.title)}.mp4')
 
                 temp_out_path = temp_parent.joinpath(f'{page.pid}_{slugify(page.title)}.mp4')
@@ -51,14 +51,15 @@ def download(videos: Generator[Video, None, None], output: Path):
 
                 logger.info(f'moving {temp_out_path} to {out_path}')
                 shutil.move(temp_out_path, out_path)
-            except Exception as e:
-                traceback.print_exc()
-                logger.error(f'download failed, av: {video.aid} bv: {video.bvid}, title: {video.title}, reason: {e}')
-                continue
 
-        logger.info(f'removing {temp_parent}')
-        shutil.rmtree(temp_parent)
-        recorder.download_history_set(video.aid, downloaded=True)
+            logger.info(f'removing {temp_parent}')
+            shutil.rmtree(temp_parent)
+            recorder.download_history_set(video.aid, downloaded=True)
+
+        except Exception as e:
+            traceback.print_exc()
+            logger.error(f'download failed, av: {video.aid} bv: {video.bvid}, title: {video.title}, reason: {e}')
+            continue
 
 
 def merge(video_path: Path, audio_path: Path, out_path: Path):
