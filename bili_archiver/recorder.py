@@ -97,8 +97,7 @@ def download_history_set(video_id: int,
                          downloaded: bool = None,
                          disappeared: bool = None,
                          info_raw: str = None,
-                         download_raw: str = None
-):
+                         download_raw: str = None):
     with get_session() as s:
         record: DownloadHistory = s.query(DownloadHistory).filter(DownloadHistory.video_id == video_id).first()
         should_add = False
