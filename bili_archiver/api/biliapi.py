@@ -1,6 +1,5 @@
 import requests
 from datetime import datetime
-import os
 from pathlib import Path
 import http.cookiejar
 
@@ -189,7 +188,7 @@ class BiliAPI:
                                 params={
                                     'avid': aid,
                                     'cid': cid,
-                                    'otype': '',
+                                    'otype': 'json',
                                     'fourk': 1,
                                     'fnver': 0,
                                     'fnval': 2000

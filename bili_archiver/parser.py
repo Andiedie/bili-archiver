@@ -50,7 +50,7 @@ def parse_cid(api: BiliAPI, page: PageBase) -> Page:
             reverse=True
         )[0]['base_url'],
         audio_url=sorted(
-            download['dash']['audio'],
+            download['dash']['audio'] + (download['dash']['dolby']['audio'] if download['dash'].get('dolby') else []),
             key=lambda x: x['bandwidth'],
             reverse=True
         )[0]['base_url']
