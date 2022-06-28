@@ -27,8 +27,8 @@ class MergeException(Exception):
 
 def download(api: BiliAPI, output: Path):
     records = recorder.get_to_download()
-
     for record in records:
+        should_cleanup = True
         aid = record.video_id
         video = parser.parse_video(api, aid)
         if video is None:
@@ -62,12 +62,16 @@ def download(api: BiliAPI, output: Path):
             recorder.download_history_set(video.aid, downloaded=True)
 
         except Exception as e:
-            traceback.print_exc()
             logger.error(f'download failed, av: {video.aid} bv: {video.bvid}, title: {video.title}, reason: {e}')
-            continue
+            traceback.print_exc()
+        except KeyboardInterrupt as e:
+            logger.error(f'interrupt by user')
+            should_cleanup = False
+            raise e
         finally:
-            logger.info(f'removing {temp_parent}')
-            shutil.rmtree(temp_parent)
+            if should_cleanup:
+                logger.info(f'removing {temp_parent}')
+                shutil.rmtree(temp_parent)
 
 
 def merge(video_path: Path, audio_path: Path, out_path: Path):
