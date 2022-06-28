@@ -55,6 +55,8 @@ def download(api: BiliAPI, output: Path):
                 aria2c(page.audio_url, referer, temp_audio_path)
                 logger.info(f'merging {temp_video_path} & {temp_audio_path} to {temp_out_path}')
                 merge(temp_video_path, temp_audio_path, temp_out_path)
+                temp_video_path.unlink()
+                temp_audio_path.unlink()
 
                 logger.info(f'moving {temp_out_path} to {out_path}')
                 shutil.move(temp_out_path, out_path)
