@@ -1,4 +1,3 @@
-from typing import List
 from bili_archiver import recorder
 from bili_archiver.api import BiliAPI
 from bili_archiver.logger import logger
