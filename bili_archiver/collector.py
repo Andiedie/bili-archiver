@@ -71,7 +71,7 @@ def collect(
 
             cnt = 0
             for v in vs:
-                vid = v['id']
+                vid = v['aid']
                 is_collected = recorder.is_collected(vid)
                 if not is_collected:
                     cnt += 1
