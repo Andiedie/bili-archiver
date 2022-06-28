@@ -34,15 +34,12 @@ def download(api: BiliAPI, output: Path):
         if video is None:
             continue
         try:
-            parent = output.joinpath(f"{video.up_id}_{slugify(video.up_name)}/{video.aid}_{slugify(video.title)}")
-            parent.mkdir(exist_ok=True, parents=True)
+
             temp_parent = tempdir.joinpath(f"{video.up_id}_{slugify(video.up_name)}_{video.aid}_{slugify(video.title)}")
             temp_parent.mkdir(exist_ok=True, parents=True)
             referer = f'https://www.bilibili.com/video/{video.bvid}'
             for page in video.pages:
                 page = parser.parse_cid(api, page)
-                out_path = parent.joinpath(f'{page.pid}_{slugify(page.title)}.mp4')
-
                 temp_out_path = temp_parent.joinpath(f'{page.pid}_{slugify(page.title)}.mp4')
                 temp_video_path = temp_parent.joinpath(f'{page.pid}_{slugify(page.title)}.bili_archiver.mp4')
                 temp_audio_path = temp_parent.joinpath(f'{page.pid}_{slugify(page.title)}.bili_archiver.m4a')
@@ -54,6 +51,9 @@ def download(api: BiliAPI, output: Path):
                 logger.info(f'merging {temp_video_path} & {temp_audio_path} to {temp_out_path}')
                 merge(temp_video_path, temp_audio_path, temp_out_path)
 
+                parent = output.joinpath(f"{video.up_id}_{slugify(video.up_name)}/{video.aid}_{slugify(video.title)}")
+                parent.mkdir(exist_ok=True, parents=True)
+                out_path = parent.joinpath(f'{page.pid}_{slugify(page.title)}.mp4')
                 logger.info(f'moving {temp_out_path} to {out_path}')
                 shutil.move(temp_out_path, out_path)
 
