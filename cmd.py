@@ -16,8 +16,8 @@ if __name__ == '__main__':
                             action='store_true', default=True, help='include history')
     arg_parser.add_argument('-f', '--self_favorite_folders',
                             action='store_true', default=True, help='include favorite folder')
-    arg_parser.add_argument('-u', '--user_ids',
-                            type=int, nargs='*', metavar='0', help='user ids')
+    arg_parser.add_argument('-u', '--users',
+                            action='store_true', default=True, help='include users in biliarchiver group')
     arg_parser.add_argument('-o', '--output',
                             type=str, metavar='.', help='output dir')
 
@@ -26,5 +26,5 @@ if __name__ == '__main__':
     logger.info(f'running with args {args}')
     api = BiliAPI.from_file(Path(args.cookies))
 
-    collector.collect(api, args.history, args.self_favorite_folders, args.user_ids)
+    collector.collect(api, args.history, args.self_favorite_folders, args.users)
     downloader.download(api, Path(args.output))

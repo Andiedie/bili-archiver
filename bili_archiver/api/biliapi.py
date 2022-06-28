@@ -111,6 +111,32 @@ class BiliAPI:
                 break
         return result
 
+    def get_follow_groups(self):
+        resp = self.session.get('https://api.bilibili.com/x/relation/tags')
+        body = resp.json()
+        BiliApiException.check(body['code'] != 0, body['message'], body['code'])
+        return body.get('data', [])
+
+    def get_users_in_group(self, group_id: int):
+        result = []
+        pn = 0
+
+        while True:
+            pn += 1
+            resp = self.session.get('https://api.bilibili.com/x/relation/tag',
+                                    params={
+                                        'tagid': group_id,
+                                        'pn': pn,
+                                        'ps': 20
+                                    })
+            body = resp.json()
+            BiliApiException.check(body['code'] != 0, body['message'], body['code'])
+            if 'data' not in body or len(body['data']) == 0:
+                break
+            result += body.get('data', [])
+
+        return result
+
     def get_videos_of_user(self, user_id: int, after: datetime):
         result = []
         pn = 0
@@ -131,6 +157,8 @@ class BiliAPI:
                 break
 
             result += [video for video in body['data']['list']['vlist'] if video['created'] >= after_ts]
+            if any(video['created'] < after_ts for video in body['data']['list']['vlist']):
+                break
 
         return result
 

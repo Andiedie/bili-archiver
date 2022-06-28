@@ -1,16 +1,12 @@
 from unittest import TestCase
 from bili_archiver.api.biliapi import BiliAPI, BiliApiException
-import os
+from pathlib import Path
 from datetime import datetime
 
 
 class TestAPI(TestCase):
     def setUp(self) -> None:
-        self.ins = BiliAPI.from_env()
-
-    def test_ins(self):
-        with self.assertRaises(BiliApiException):
-            BiliAPI('123', '123')
+        self.ins = BiliAPI.from_file(Path('/Users/andie/Downloads/bilibili.com_cookies.txt'))
 
     def test_get_history(self):
         print(
@@ -34,6 +30,16 @@ class TestAPI(TestCase):
                     self.ins.get_self_favorite_folders()[0]['id'], today()
                 )
             ]
+        )
+
+    def test_get_follow_groups(self):
+        print(
+            self.ins.get_follow_groups()
+        )
+
+    def test_get_users_in_group(self):
+        print(
+            self.ins.get_users_in_group(436424)
         )
 
     def test_get_videos_of_user(self):
