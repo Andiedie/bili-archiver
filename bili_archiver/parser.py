@@ -1,19 +1,24 @@
-from typing import Generator, List
+from typing import List, Optional
 from datetime import datetime
+from dataclasses import dataclass
 from bili_archiver.api import BiliAPI
 from bili_archiver.api.biliapi import BiliApiException
-from dataclasses import dataclass
-import json
 from bili_archiver.logger import logger
 from bili_archiver import recorder
 
 
 @dataclass
-class Page:
+class PageBase:
+    aid: int
+    bvid: str
     cid: int
     pid: int
     title: str
     duration: int
+
+
+@dataclass
+class Page(PageBase):
     video_url: str
     audio_url: str
 
@@ -26,71 +31,66 @@ class Video:
     up_id: int
     up_name: str
     created_at: datetime
-    pages: List[Page]
+    pages: List[PageBase]
 
 
-def parse(api: BiliAPI) -> Generator[Video, None, None]:
-    records = recorder.get_to_download()
+def parse_cid(api: BiliAPI, page: PageBase) -> Page:
+    logger.info(f'parsing page, av: {page.aid} page: {page.pid} cid: {page.cid}')
+    download = api.get_video_page_download_url(page.aid, page.cid)
+    return Page(
+        aid=page.aid,
+        bvid=page.bvid,
+        cid=page.cid,
+        pid=page.pid,
+        title=page.title,
+        duration=page.duration,
+        video_url=sorted(
+            download['dash']['video'],
+            key=lambda x: x['bandwidth'],
+            reverse=True
+        )[0]['base_url'],
+        audio_url=sorted(
+            download['dash']['audio'],
+            key=lambda x: x['bandwidth'],
+            reverse=True
+        )[0]['base_url']
+    )
 
-    for record in records:
-        aid = record.video_id
-        logger.info(f'parsing av{aid}')
 
-        if record.info_raw != '':
-            info = json.loads(record.info_raw)
-            logger.info(f"get av{aid} info from db")
+def parse_video(api: BiliAPI, aid: int) -> Optional[Video]:
+    logger.info(f'parsing av{aid}')
+
+    try:
+        info = api.get_video_info(aid=aid)
+        logger.info(f"get av{aid} info from api")
+    except BiliApiException as e:
+        if e.code == -404 or e.code == 62002:
+            logger.warning(f"av{aid} disappeared")
+            recorder.download_history_set(aid, disappeared=True)
+            return None
         else:
-            try:
-                info = api.get_video_info(aid=aid)
-                logger.info(f"get av{aid} info from api")
-            except BiliApiException as e:
-                if e.code == -404 or e.code == 62002:
-                    logger.warning(f"av{aid} disappeared")
-                    recorder.download_history_set(aid, disappeared=True)
-                    continue
-                else:
-                    logger.warning(f'parse av{aid} failed: {e}')
-                    raise e
+            logger.warning(f'parse av{aid} failed: {e}')
+            raise e
 
-        logger.info(f"av{aid} title {info['title']}")
+    logger.info(f"av{aid} title {info['title']}")
 
-        if record.download_raw != '':
-            play_urls = json.loads(record.download_raw)
-            logger.info(f"get av{aid} play_urls from db")
-        else:
-            play_urls = []
-            for page in info['pages']:
-                logger.info(f"parsing page av{aid} p{page['page']} cid{page['cid']}({page['part']})")
-                url = api.get_video_page_download_url(aid, page['cid'])
-                play_urls.append(url)
-            logger.info(f"get av{aid} play_urls from api")
-
-        video = Video(
-            aid=aid,
-            bvid=info['bvid'],
-            title=info['title'],
-            up_id=info['owner']['mid'],
-            up_name=info['owner']['name'],
-            created_at=datetime.fromtimestamp(info['ctime']),
-            pages=[
-                Page(
-                    cid=page['cid'],
-                    pid=page['page'],
-                    title=page['part'],
-                    duration=page['duration'],
-                    video_url=sorted(
-                        download['dash']['video'],
-                        key=lambda x: x['bandwidth'],
-                        reverse=True
-                    )[0]['base_url'],
-                    audio_url=sorted(
-                        download['dash']['audio'],
-                        key=lambda x: x['bandwidth'],
-                        reverse=True
-                    )[0]['base_url']
-                )
-                for page, download in zip(info['pages'], play_urls)
-            ]
-        )
-        recorder.download_history_set(aid, info_raw=json.dumps(info), download_raw=json.dumps(play_urls))
-        yield video
+    video = Video(
+        aid=aid,
+        bvid=info['bvid'],
+        title=info['title'],
+        up_id=info['owner']['mid'],
+        up_name=info['owner']['name'],
+        created_at=datetime.fromtimestamp(info['ctime']),
+        pages=[
+            PageBase(
+                aid=aid,
+                bvid=info['bvid'],
+                cid=page['cid'],
+                pid=page['page'],
+                title=page['part'],
+                duration=page['duration']
+            )
+            for page in info['pages']
+        ]
+    )
+    return video

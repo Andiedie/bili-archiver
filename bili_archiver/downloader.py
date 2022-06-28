@@ -1,13 +1,11 @@
-import hashlib
 import shutil
 import traceback
-
-from bili_archiver.parser import Video
-from typing import Generator
+from bili_archiver.api import BiliAPI
 from fake_useragent import UserAgent
 from pathlib import Path
 import subprocess
 from bili_archiver import recorder
+from bili_archiver import parser
 # noinspection PyPackageRequirements
 import slugify
 from functools import partial
@@ -27,8 +25,14 @@ class MergeException(Exception):
     pass
 
 
-def download(videos: Generator[Video, None, None], output: Path):
-    for video in videos:
+def download(api: BiliAPI, output: Path):
+    records = recorder.get_to_download()
+
+    for record in records:
+        aid = record.video_id
+        video = parser.parse_video(api, aid)
+        if video is None:
+            continue
         try:
             parent = output.joinpath(f"{video.up_id}_{slugify(video.up_name)}/{video.aid}_{slugify(video.title)}")
             parent.mkdir(exist_ok=True, parents=True)
@@ -36,6 +40,7 @@ def download(videos: Generator[Video, None, None], output: Path):
             temp_parent.mkdir(exist_ok=True, parents=True)
             referer = f'https://www.bilibili.com/video/{video.bvid}'
             for page in video.pages:
+                page = parser.parse_cid(api, page)
                 out_path = parent.joinpath(f'{page.pid}_{slugify(page.title)}.mp4')
 
                 temp_out_path = temp_parent.joinpath(f'{page.pid}_{slugify(page.title)}.mp4')
@@ -78,6 +83,7 @@ def aria2c(url: str, referer: str, out: Path):
         '-x', '16', '-s', '16', '-k', '1M',
         '--file-allocation=none',
         '--auto-file-renaming=false',
+        '--allow-overwrite=true',
         f'--user-agent="{ua}"',
         f'--referer={referer}',
         f'--dir={out.parent}',

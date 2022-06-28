@@ -42,8 +42,6 @@ class DownloadHistory(Base, BaseMixin):
     video_id = Column(Integer, unique=True, nullable=False)
     downloaded = Column(Integer, nullable=False, default=0)
     disappeared = Column(Integer, nullable=False, default=0)
-    info_raw = Column(String, nullable=False, default='')
-    download_raw = Column(String, nullable=False, default='')
 
 
 Base.metadata.create_all(engine)
@@ -95,9 +93,7 @@ def is_disappeared(video_id: int) -> bool:
 
 def download_history_set(video_id: int,
                          downloaded: bool = None,
-                         disappeared: bool = None,
-                         info_raw: str = None,
-                         download_raw: str = None):
+                         disappeared: bool = None):
     with get_session() as s:
         record: DownloadHistory = s.query(DownloadHistory).filter(DownloadHistory.video_id == video_id).first()
         should_add = False
@@ -109,10 +105,6 @@ def download_history_set(video_id: int,
             record.downloaded = 1 if downloaded else 0
         if disappeared is not None:
             record.disappeared = 1 if disappeared else 0
-        if info_raw is not None:
-            record.info_raw = info_raw
-        if download_raw is not None:
-            record.download_raw = download_raw
         if should_add:
             s.add(record)
 

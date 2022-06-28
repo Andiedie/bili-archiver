@@ -27,5 +27,4 @@ if __name__ == '__main__':
     api = BiliAPI.from_file(Path(args.cookies))
 
     collector.collect(api, args.history, args.self_favorite_folders, args.user_ids)
-    videos = parser.parse(api)
-    downloader.download(videos, Path(args.output))
+    downloader.download(api, Path(args.output))
