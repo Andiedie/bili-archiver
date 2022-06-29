@@ -189,6 +189,20 @@ class BiliAPI:
                                     'avid': aid,
                                     'cid': cid,
                                     'otype': 'json',
+                                    'qn': 120,
+                                    'fourk': 1,
+                                    'fnver': 0,
+                                    'fnval': 2000
+                                })
+        body = resp.json()
+        BiliApiException.check(body['code'] != 0, body['message'], body['code'])
+
+        resp = self.session.get('https://api.bilibili.com/x/player/playurl',
+                                params={
+                                    'avid': aid,
+                                    'cid': cid,
+                                    'otype': 'json',
+                                    'qn': max(body['data']['accept_quality']),
                                     'fourk': 1,
                                     'fnver': 0,
                                     'fnval': 2000

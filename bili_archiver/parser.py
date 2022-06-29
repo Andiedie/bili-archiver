@@ -37,6 +37,23 @@ class Video:
 def parse_cid(api: BiliAPI, page: PageBase) -> Page:
     logger.info(f'parsing page, av: {page.aid} page: {page.pid} cid: {page.cid}')
     download = api.get_video_page_download_url(page.aid, page.cid)
+    video_url = sorted(
+        download['dash']['video'],
+        key=lambda x: x['id'],
+        reverse=True
+    )[0]['base_url']
+    if download['dash'].get('dolby'):
+        audio_url = sorted(
+            download['dash']['dolby']['audio'],
+            key=lambda x: x['bandwidth'],
+            reverse=True
+        )[0]['base_url']
+    else:
+        audio_url = sorted(
+            download['dash']['audio'],
+            key=lambda x: x['bandwidth'],
+            reverse=True
+        )[0]['base_url']
     return Page(
         aid=page.aid,
         bvid=page.bvid,
@@ -44,16 +61,8 @@ def parse_cid(api: BiliAPI, page: PageBase) -> Page:
         pid=page.pid,
         title=page.title,
         duration=page.duration,
-        video_url=sorted(
-            download['dash']['video'],
-            key=lambda x: x['bandwidth'],
-            reverse=True
-        )[0]['base_url'],
-        audio_url=sorted(
-            download['dash']['audio'] + (download['dash']['dolby']['audio'] if download['dash'].get('dolby') else []),
-            key=lambda x: x['bandwidth'],
-            reverse=True
-        )[0]['base_url']
+        video_url=video_url,
+        audio_url=audio_url
     )
 
 

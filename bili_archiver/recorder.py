@@ -113,7 +113,8 @@ def get_to_download():
     with get_session() as s:
         records: List[DownloadHistory] = s.query(DownloadHistory).\
             filter(DownloadHistory.downloaded == 0 and DownloadHistory).\
-            filter(DownloadHistory.disappeared == 0).all()
+            filter(DownloadHistory.disappeared == 0).\
+            order_by(DownloadHistory.video_id.desc()).all()
         s.expunge_all()
         return records
 

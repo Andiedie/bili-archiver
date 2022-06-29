@@ -1,5 +1,6 @@
+import json
 from unittest import TestCase
-from bili_archiver.api.biliapi import BiliAPI, BiliApiException
+from bili_archiver.api.biliapi import BiliAPI
 from pathlib import Path
 from datetime import datetime
 
@@ -54,10 +55,10 @@ class TestAPI(TestCase):
         print(self.ins.get_video_info(bvid='BV1qM4y1w716'))
 
     def test_get_video_pages(self):
-        print(self.ins.get_video_pages(934637444))
+        print(self.ins.get_video_pages(925374962))
 
     def test_get_video_page_download_url(self):
-        print(self.ins.get_video_page_download_url(210904288, 493070282))
+        print(json.dumps(self.ins.get_video_page_download_url(925374962, 181853543)))
 
 
 def today():
