@@ -1,7 +1,6 @@
 import requests
 from datetime import datetime
-from pathlib import Path
-import http.cookiejar
+import browsercookie
 
 
 class BiliApiException(Exception):
@@ -26,9 +25,8 @@ class BiliAPI:
     #     return BiliAPI(session)
 
     @staticmethod
-    def from_file(path: Path):
-        cj = http.cookiejar.MozillaCookieJar(path)
-        cj.load()
+    def from_chrome():
+        cj = browsercookie.chrome()
         session = requests.Session()
         session.cookies = cj
         return BiliAPI(session)

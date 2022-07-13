@@ -52,13 +52,13 @@ class TestAPI(TestCase):
         )
 
     def test_def_get_video_info(self):
-        print(self.ins.get_video_info(bvid='BV1qM4y1w716'))
+        print(json.dumps(self.ins.get_video_info(aid=8320117)))
 
     def test_get_video_pages(self):
-        print(self.ins.get_video_pages(925374962))
+        print(self.ins.get_video_pages(8320117))
 
     def test_get_video_page_download_url(self):
-        print(json.dumps(self.ins.get_video_page_download_url(925374962, 181853543)))
+        print(json.dumps(self.ins.get_video_page_download_url(8320117, 181853543)))
 
 
 def today():

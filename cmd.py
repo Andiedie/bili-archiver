@@ -10,8 +10,6 @@ if __name__ == '__main__':
 
     arg_parser.add_argument('--help',
                             action='help')
-    arg_parser.add_argument('-c', '--cookies',
-                            type=str, metavar='./bilibili.com_cookies', help='netscape http cookie file')
     arg_parser.add_argument('-h', '--history',
                             action='store_true', default=True, help='include history')
     arg_parser.add_argument('-f', '--self_favorite_folders',
@@ -24,7 +22,7 @@ if __name__ == '__main__':
     args = arg_parser.parse_args()
 
     logger.info(f'running with args {args}')
-    api = BiliAPI.from_file(Path(args.cookies))
+    api = BiliAPI.from_chrome()
 
     collector.collect(api, args.history, args.self_favorite_folders, args.users)
     downloader.download(api, Path(args.output))

@@ -21,6 +21,7 @@ class PageBase:
 class Page(PageBase):
     video_url: str
     audio_url: str
+    video_urls: List[str]
 
 
 @dataclass
@@ -34,36 +35,64 @@ class Video:
     pages: List[PageBase]
 
 
-def parse_cid(api: BiliAPI, page: PageBase) -> Page:
+def parse_cid(api: BiliAPI, page: PageBase) -> Optional[Page]:
     logger.info(f'parsing page, av: {page.aid} page: {page.pid} cid: {page.cid}')
-    download = api.get_video_page_download_url(page.aid, page.cid)
-    video_url = sorted(
-        download['dash']['video'],
-        key=lambda x: x['id'],
-        reverse=True
-    )[0]['base_url']
-    if download['dash'].get('dolby'):
-        audio_url = sorted(
-            download['dash']['dolby']['audio'],
-            key=lambda x: x['bandwidth'],
+
+    try:
+        download = api.get_video_page_download_url(page.aid, page.cid)
+    except BiliApiException as e:
+        if e.code == -404 or e.code == 62002:
+            logger.warning(f"av{page.aid} disappeared")
+            recorder.download_history_set(page.aid, disappeared=True)
+            return None
+        else:
+            logger.warning(f'parse av{page.aid} failed: {e}')
+            raise e
+
+    if 'dash' in download:
+        video_url = sorted(
+            download['dash']['video'],
+            key=lambda x: x['id'],
             reverse=True
         )[0]['base_url']
+        if download['dash'].get('dolby'):
+            audio_url = sorted(
+                download['dash']['dolby']['audio'],
+                key=lambda x: x['bandwidth'],
+                reverse=True
+            )[0]['base_url']
+        else:
+            audio_url = sorted(
+                download['dash']['audio'],
+                key=lambda x: x['bandwidth'],
+                reverse=True
+            )[0]['base_url']
+        return Page(
+            aid=page.aid,
+            bvid=page.bvid,
+            cid=page.cid,
+            pid=page.pid,
+            title=page.title,
+            duration=page.duration,
+            video_url=video_url,
+            audio_url=audio_url,
+            video_urls=[]
+        )
     else:
-        audio_url = sorted(
-            download['dash']['audio'],
-            key=lambda x: x['bandwidth'],
-            reverse=True
-        )[0]['base_url']
-    return Page(
-        aid=page.aid,
-        bvid=page.bvid,
-        cid=page.cid,
-        pid=page.pid,
-        title=page.title,
-        duration=page.duration,
-        video_url=video_url,
-        audio_url=audio_url
-    )
+        return Page(
+            aid=page.aid,
+            bvid=page.bvid,
+            cid=page.cid,
+            pid=page.pid,
+            title=page.title,
+            duration=page.duration,
+            video_url='',
+            audio_url='',
+            video_urls=[
+                one['url']
+                for one in download['durl']
+            ]
+        )
 
 
 def parse_video(api: BiliAPI, aid: int) -> Optional[Video]:
