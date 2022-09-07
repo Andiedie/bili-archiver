@@ -109,6 +109,7 @@ def download(api: BiliAPI, output: Path):
         if video is None:
             continue
         download_video(api, video, output)
+        time.sleep(5)
 
 
 def merge(video_path: Path, audio_path: Path, out_path: Path):
@@ -140,7 +141,8 @@ def merge_segment(file_list: List[Path], out_path: Path):
 def aria2c(url: str, referer: str, out: Path):
     p = subprocess.Popen([
         'aria2c',
-        '-x', '16', '-s', '16', '-k', '1M',
+        '-x', '4', '-s', '16', '-k', '1M',
+        '--check-certificate=false',
         '--file-allocation=none',
         '--auto-file-renaming=false',
         '--allow-overwrite=true',
