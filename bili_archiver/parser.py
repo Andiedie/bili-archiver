@@ -1,3 +1,4 @@
+import json
 from typing import List, Optional
 from datetime import datetime
 from dataclasses import dataclass
@@ -48,14 +49,14 @@ def parse_cid(api: BiliAPI, page: PageBase) -> Optional[Page]:
         else:
             logger.warning(f'parse av{page.aid} failed: {e}')
             raise e
-
+    # print(json.dumps(download))
     if 'dash' in download:
         video_url = sorted(
             download['dash']['video'],
             key=lambda x: x['id'],
             reverse=True
         )[0]['base_url']
-        if download['dash'].get('dolby'):
+        if download['dash'].get('dolby', {}).get('audio'):
             audio_url = sorted(
                 download['dash']['dolby']['audio'],
                 key=lambda x: x['bandwidth'],

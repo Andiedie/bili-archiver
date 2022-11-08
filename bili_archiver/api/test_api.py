@@ -1,13 +1,12 @@
 import json
 from unittest import TestCase
 from bili_archiver.api.biliapi import BiliAPI
-from pathlib import Path
 from datetime import datetime
 
 
 class TestAPI(TestCase):
     def setUp(self) -> None:
-        self.ins = BiliAPI.from_file(Path('/Users/andie/Downloads/bilibili.com_cookies.txt'))
+        self.ins = BiliAPI.from_chrome()
 
     def test_get_history(self):
         print(

@@ -1,6 +1,7 @@
 import requests
 from datetime import datetime
 import browsercookie
+from fake_useragent import UserAgent
 
 
 class BiliApiException(Exception):
@@ -29,6 +30,7 @@ class BiliAPI:
         cj = browsercookie.chrome()
         session = requests.Session()
         session.cookies = cj
+        session.headers.update({'User-Agent': UserAgent().chrome})
         return BiliAPI(session)
 
     def __init__(self, session: requests.Session):

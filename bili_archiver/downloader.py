@@ -86,14 +86,16 @@ def download_video(api: BiliAPI, video: Video, output: Path):
             shutil.move(temp_out_path, out_path)
 
         recorder.download_history_set(video.aid, downloaded=True)
-
-    except Exception as e:
-        logger.error(f'download failed, av: {video.aid} bv: {video.bvid}, title: {video.title}, reason: {e}')
-        traceback.print_exc()
-        raise e
     except KeyboardInterrupt as e:
         logger.error(f'interrupt by user')
         should_cleanup = False
+        raise e
+    except DownloadException as e:
+        logger.error(f'download failed, av: {video.aid} bv: {video.bvid}, title: {video.title}, reason: {e}')
+        traceback.print_exc()
+    except Exception as e:
+        logger.error(f'download failed, av: {video.aid} bv: {video.bvid}, title: {video.title}, reason: {e}')
+        traceback.print_exc()
         raise e
     finally:
         if should_cleanup:
@@ -142,7 +144,7 @@ def aria2c(url: str, referer: str, out: Path):
     p = subprocess.Popen([
         'aria2c',
         '-x', '4', '-s', '16', '-k', '1M',
-        '--check-certificate=false',
+        # '--check-certificate=false',
         '--file-allocation=none',
         '--auto-file-renaming=false',
         '--allow-overwrite=true',
